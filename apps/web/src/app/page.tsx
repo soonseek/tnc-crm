@@ -28,6 +28,7 @@ export default function TodayPage() {
         description="8월 19일 수요일 · 김정석 님"
         showSearch
         showAdd
+        showEnvironmentLabel
       />
       <div className="space-y-6 px-4 py-5">
         <ScopeSwitch />

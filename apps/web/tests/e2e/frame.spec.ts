@@ -33,8 +33,13 @@ test("local header add button uses the dark gray environment color", async ({ pa
   await page.goto("/");
 
   const addButton = page.getByRole("link", { name: "영업 건 추가" });
+  const environmentLabel = page.locator("[data-environment-label]");
+
   await expect(addButton).toHaveAttribute("data-deployment-environment", "local");
   await expect(addButton).toHaveClass(/\bbg-zinc-800\b/);
+  await expect(environmentLabel).toHaveText("LOCAL");
+  await expect(environmentLabel).toHaveAttribute("data-deployment-environment", "local");
+  await expect(environmentLabel).toHaveClass(/\bbg-zinc-800\b/);
 });
 
 test("primary frames are reachable from mobile navigation", async ({ page }) => {

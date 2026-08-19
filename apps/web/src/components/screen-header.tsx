@@ -2,8 +2,11 @@ import Link from "next/link";
 import { ArrowLeft, Bell, Plus, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   getDeploymentEnvironment,
+  getEnvironmentLabel,
+  getEnvironmentLabelClassName,
   getHeaderAddButtonClassName,
 } from "@/lib/deployment-environment";
 
@@ -13,6 +16,7 @@ type ScreenHeaderProps = {
   backHref?: string;
   showSearch?: boolean;
   showAdd?: boolean;
+  showEnvironmentLabel?: boolean;
 };
 
 export function ScreenHeader({
@@ -21,6 +25,7 @@ export function ScreenHeader({
   backHref,
   showSearch = false,
   showAdd = false,
+  showEnvironmentLabel = false,
 }: ScreenHeaderProps) {
   const deploymentEnvironment = getDeploymentEnvironment();
 
@@ -35,7 +40,18 @@ export function ScreenHeader({
           </Button>
         ) : null}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-bold tracking-tight">{title}</h1>
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="min-w-0 truncate text-lg font-bold tracking-tight">{title}</h1>
+            {showEnvironmentLabel ? (
+              <Badge
+                className={getEnvironmentLabelClassName(deploymentEnvironment)}
+                data-environment-label
+                data-deployment-environment={deploymentEnvironment}
+              >
+                {getEnvironmentLabel(deploymentEnvironment)}
+              </Badge>
+            ) : null}
+          </div>
           {description ? (
             <p className="truncate text-xs text-muted-foreground">{description}</p>
           ) : null}
@@ -60,7 +76,10 @@ export function ScreenHeader({
               className={getHeaderAddButtonClassName(deploymentEnvironment)}
               aria-label="영업 건 추가"
             >
-              <Link href="/deals/new" data-deployment-environment={deploymentEnvironment}>
+              <Link
+                href="/deals/new"
+                data-deployment-environment={deploymentEnvironment}
+              >
                 <Plus />
               </Link>
             </Button>

@@ -8,6 +8,18 @@ const headerAddButtonClassNames: Record<DeploymentEnvironment, string | undefine
   production: undefined,
 };
 
+const environmentLabels: Record<DeploymentEnvironment, string> = {
+  local: "LOCAL",
+  staging: "STAGING",
+  production: "PRODUCTION",
+};
+
+const environmentLabelClassNames: Record<DeploymentEnvironment, string> = {
+  local: "border-transparent bg-zinc-800 text-white",
+  staging: "border-transparent bg-amber-400 text-amber-950",
+  production: "border-transparent bg-primary text-primary-foreground",
+};
+
 export function getDeploymentEnvironment(
   value = process.env.CRM_DEPLOYMENT_ENV,
 ): DeploymentEnvironment {
@@ -22,4 +34,14 @@ export function getHeaderAddButtonClassName(
   environment: DeploymentEnvironment,
 ) {
   return headerAddButtonClassNames[environment];
+}
+
+export function getEnvironmentLabel(environment: DeploymentEnvironment) {
+  return environmentLabels[environment];
+}
+
+export function getEnvironmentLabelClassName(
+  environment: DeploymentEnvironment,
+) {
+  return environmentLabelClassNames[environment];
 }

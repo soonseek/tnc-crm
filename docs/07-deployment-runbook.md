@@ -1,6 +1,6 @@
 # Railway 배포 실행서
 
-GitHub 계정의 Billing 제한으로 GitHub Actions job을 실행할 수 없다. 해제 가능성을 전제로 운영하지 않고, 로컬 검증과 Railway CLI를 결합한 승인형 배포를 현재 표준으로 사용한다.
+GitHub 계정의 Billing 제한으로 GitHub Actions job을 실행할 수 없다. production API·Web은 Railway GitHub 소스로 `main`에 직접 연결하고, PR 확인 병합을 운영 승인점으로 사용한다. staging은 Railway CLI 수동 배포를 유지한다.
 
 현재 배포 단위는 실제 저장 기능이 연결된 `Web`과 `API`다. `Worker`와 `Cron`은 이메일 알림·누락 복구 코드가 구현될 때 독립 서비스로 추가한다.
 
@@ -8,9 +8,9 @@ GitHub 계정의 Billing 제한으로 GitHub Actions job을 실행할 수 없다
 
 - `staging`과 `production`은 같은 Railway 프로젝트 안의 별도 Environment다.
 - 두 환경은 PostgreSQL·변수·배포 이력을 공유하지 않는다.
-- Railway 서비스에는 GitHub 소스를 직접 연결하지 않는다.
-- 배포 파일은 현재 로컬 작업 트리에서 Railway CLI로 업로드한다.
-- 운영 배포는 깨끗한 `main` 커밋에서만 수행한다.
+- production API·Web은 `soonseek/tnc-crm`의 `main` 브랜치에 직접 연결한다.
+- staging은 GitHub 소스를 연결하지 않고 Railway CLI로 배포한다.
+- production은 `main`에 병합된 커밋만 자동 배포한다.
 - 인증 전 임시 운영 배포에서는 실제 고객 데이터를 입력하지 않는다.
 
 ## 2. 현재 운영 인프라 상태 (2026-08-19)
@@ -48,7 +48,7 @@ NEXT_PUBLIC_CRM_API_BASE_URL=https://tnc-crm-api-production-production.up.railwa
 CRM_DEPLOYMENT_ENV=production
 ```
 
-staging Web에는 `CRM_DEPLOYMENT_ENV=staging`을 설정하고, 로컬은 값이 없더라도 `local`로 동작한다. 이 값에 따라 할 일 화면 GNB의 영업 건 추가 버튼이 로컬 짙은 회색, staging 노란색, production 코발트 파란색으로 표시된다.
+staging Web에는 `CRM_DEPLOYMENT_ENV=staging`을 설정하고, 로컬은 값이 없더라도 `local`로 동작한다. 이 값에 따라 할 일 화면 GNB의 환경 라벨과 영업 건 추가 버튼이 로컬 `LOCAL`·짙은 회색, staging `STAGING`·노란색, production `PRODUCTION`·코발트 파란색으로 표시된다.
 
 위 키는 production에 설정했다. 비밀 값은 저장소와 문서에 기록하지 않는다. `NEXT_PUBLIC_CRM_API_BASE_URL`은 브라우저 번들에 포함되므로 API 주소 변경 뒤에는 Web을 다시 배포한다.
 
@@ -65,18 +65,18 @@ staging Web에는 `CRM_DEPLOYMENT_ENV=staging`을 설정하고, 로컬은 값이
 
 현재 1~3번은 구현 전이다. URL을 알고 있는 누구나 접근할 수 있으므로 검수 용도로만 사용한다.
 
-## 5. GitHub Actions 없는 검증·배포 절차
+## 5. GitHub main 직접 배포 절차
 
-### 5.1 릴리스 후보 고정
+### 5.1 릴리스 후보 검증
 
 ```powershell
-git switch main
+git switch develop
 git pull --ff-only
 git status --short
 git log -1 --oneline
 ```
 
-`git status --short` 출력이 없어야 한다. 검증 중인 커밋 해시를 배포 기록에 남긴다.
+`git status --short` 출력이 없어야 한다. 검증 중인 커밋 해시를 PR에 남긴다.
 
 ### 5.2 로컬 검증
 
@@ -88,20 +88,18 @@ pnpm test
 pnpm build
 ```
 
-모두 성공해야 한다. 운영 배포 직전에는 같은 커밋을 staging에 배포하고 실제 API 연결 E2E 및 사용자 검수를 먼저 통과시킨다.
+모두 성공해야 한다. 같은 커밋을 staging에 배포하고 실제 API 연결 E2E 및 사용자 검수를 통과시킨 뒤 `main` 대상 PR을 확인 병합한다.
 
-### 5.3 운영 배포
+### 5.3 운영 자동 배포
 
-Railway CLI 로그인과 프로젝트 연결을 확인한 후 반드시 서비스와 환경을 명시한다.
+PR이 `main`에 병합되면 Railway가 production API·Web의 watch pattern을 평가해 관련 서비스를 자동 배포한다. 공용 계약 변경은 API와 Web을 모두 배포하고, API pre-deploy 마이그레이션과 각 서비스 상태 점검은 Config as Code 설정을 따른다.
 
 ```powershell
-railway up --service tnc-crm-api-production --environment production --ci --message "production <commit-hash> api"
 Invoke-RestMethod https://tnc-crm-api-production-production.up.railway.app/api/v1/health
-railway up --service tnc-crm-web-production --environment production --ci --message "production <commit-hash> web"
 Invoke-WebRequest https://tnc-crm-web-production-production.up.railway.app/ -UseBasicParsing
 ```
 
-API 상태 응답에서 PostgreSQL `ready: true`를 확인한 뒤에만 Web을 배포한다. Web HTTP 200 확인 후 핵심 영업 흐름을 운영 테스트 계정과 테스트 데이터로 점검하고 즉시 제거하거나 보관 처리한다.
+API 상태 응답에서 PostgreSQL `ready: true`, Web HTTP 200, Railway Deployment의 branch와 commit hash가 병합 커밋과 일치하는지 확인한다. 자동 배포가 시작되지 않았을 때만 `railway redeploy --from-source`를 복구 수단으로 사용한다.
 
 ## 6. 백업과 복구
 
@@ -133,4 +131,4 @@ PostgreSQL은 production 전용 볼륨을 사용하고 외부 공개 URL을 발�
 
 ## 9. GitHub의 역할
 
-GitHub는 코드 이력과 `develop`·`main` 릴리스 기준점으로 계속 사용한다. Billing 제한으로 `.github/workflows/ci.yml`은 수동 참조용으로만 남기며 자동 트리거하지 않는다. 추후 GitHub Actions가 다시 가능해지더라도 Railway 직접 소스 연결과 Actions 배포를 동시에 켜지 않는다.
+GitHub는 코드 이력과 `develop`·`main` 릴리스 기준점으로 사용한다. production API·Web만 Railway에서 `main`에 직접 연결하고 staging은 수동 배포한다. Billing 제한으로 `.github/workflows/ci.yml`은 수동 참조용으로만 남긴다. 추후 GitHub Actions가 다시 가능해지면 production 배포 책임을 Railway 직접 연결과 Actions 중 하나로 다시 통일한다.
