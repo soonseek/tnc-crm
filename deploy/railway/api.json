@@ -6,6 +6,7 @@
     "watchPatterns": [
       "apps/api/**",
       "packages/contracts/**",
+      "deploy/railway/api.json",
       "package.json",
       "pnpm-lock.yaml",
       "pnpm-workspace.yaml",
@@ -25,7 +26,7 @@
         "numReplicas": 1
       }
     },
-    "overlapSeconds": "20",
-    "drainingSeconds": "10"
+    "overlapSeconds": 20,
+    "drainingSeconds": 10
   }
 }

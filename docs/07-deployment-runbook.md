@@ -1,78 +1,136 @@
 # Railway 배포 실행서
 
-현재 배포 단위는 실제 저장 기능이 연결된 `Web`과 `API`다. `Worker`와 `Cron`은 이메일 알림·누락 복구가 구현되는 MVP 후속 묶음에서 독립 서비스로 추가한다. 빈 프로세스를 먼저 배포하지 않는다.
+GitHub 계정의 Billing 제한으로 GitHub Actions job을 실행할 수 없다. 해제 가능성을 전제로 운영하지 않고, 로컬 검증과 Railway CLI를 결합한 승인형 배포를 현재 표준으로 사용한다.
 
-## 1. Railway 최초 설정
+현재 배포 단위는 실제 저장 기능이 연결된 `Web`과 `API`다. `Worker`와 `Cron`은 이메일 알림·누락 복구 코드가 구현될 때 독립 서비스로 추가한다.
 
-스테이징과 운영은 같은 프로젝트의 별도 Railway Environment로 만든다.
+## 1. 환경 원칙
 
-1. Railway 프로젝트에 `staging`, `production` Environment를 만든다.
-2. 각 Environment에 PostgreSQL을 하나씩 추가한다.
-3. 같은 GitHub 저장소를 소스로 하는 `tnc-crm-api`, `tnc-crm-web` 서비스를 만든다.
-4. API 서비스의 Config as Code 경로를 `/deploy/railway/api.json`으로 설정한다.
-5. Web 서비스의 Config as Code 경로를 `/deploy/railway/web.json`으로 설정한다.
-6. 두 서비스에 Public Domain을 발급한다.
+- `staging`과 `production`은 같은 Railway 프로젝트 안의 별도 Environment다.
+- 두 환경은 PostgreSQL·변수·배포 이력을 공유하지 않는다.
+- Railway 서비스에는 GitHub 소스를 직접 연결하지 않는다.
+- 배포 파일은 현재 로컬 작업 트리에서 Railway CLI로 업로드한다.
+- 운영 배포는 깨끗한 `main` 커밋에서만 수행한다.
+- 인증 전 임시 운영 배포에서는 실제 고객 데이터를 입력하지 않는다.
 
-두 설정 파일은 Railpack 빌드, 싱가포르 단일 replica, 상태 점검, 재시작, 무중단 교체 시간을 고정한다. API는 새 버전을 시작하기 전에 PostgreSQL 마이그레이션을 실행한다.
+## 2. 현재 운영 인프라 상태 (2026-08-19)
 
-## 2. Railway 환경 변수
+| 자원 | 이름 | 상태 |
+| --- | --- | --- |
+| Railway Environment | `production` | 생성·격리 완료 |
+| PostgreSQL 18 | `Postgres-7I-m` | 실행 중, 전용 50GB 볼륨 READY, 공개 URL 없음 |
+| API | `tnc-crm-api-production` | 임시 운영 배포 SUCCESS, PostgreSQL 연결 정상 |
+| Web | `tnc-crm-web-production` | 임시 운영 배포 SUCCESS, HTTP 200 |
+
+현재 임시 운영 주소는 다음과 같다.
+
+- API: `https://tnc-crm-api-production-production.up.railway.app`
+- Web: `https://tnc-crm-web-production-production.up.railway.app`
+
+API에는 `/deploy/railway/api.json`, Web에는 `/deploy/railway/web.json`을 Config as Code 경로로 지정했다. 두 파일은 Railpack 빌드, 싱가포르 단일 replica, 상태 점검, 재시작 정책과 무중단 교체 시간을 고정한다. API는 새 버전 시작 전에 PostgreSQL 마이그레이션을 실행한다.
+
+## 3. 운영 환경 변수
 
 ### API
 
 ```text
 NODE_ENV=production
-DATABASE_URL=${{Postgres.DATABASE_URL}}
+DATABASE_URL=${{Postgres-7I-m.DATABASE_URL}}
 DATABASE_POOL_SIZE=10
-WEB_ORIGIN=https://<web-domain>
+WEB_ORIGIN=https://tnc-crm-web-production-production.up.railway.app
 ```
 
 ### Web
 
 ```text
-CRM_API_BASE_URL=https://<api-domain>/api/v1
-NEXT_PUBLIC_CRM_API_BASE_URL=https://<api-domain>/api/v1
+CRM_API_BASE_URL=https://tnc-crm-api-production-production.up.railway.app/api/v1
+NEXT_PUBLIC_CRM_API_BASE_URL=https://tnc-crm-api-production-production.up.railway.app/api/v1
+CRM_DEPLOYMENT_ENV=production
 ```
 
-`NEXT_PUBLIC_CRM_API_BASE_URL`은 브라우저 번들 빌드 시 포함되므로 API 도메인 변경 뒤에는 Web을 다시 배포한다. 비밀 값은 저장소나 `.env.example`에 넣지 않는다.
+staging Web에는 `CRM_DEPLOYMENT_ENV=staging`을 설정하고, 로컬은 값이 없더라도 `local`로 동작한다. 이 값에 따라 할 일 화면 GNB의 영업 건 추가 버튼이 로컬 짙은 회색, staging 노란색, production 코발트 파란색으로 표시된다.
 
-## 3. GitHub Environment
+위 키는 production에 설정했다. 비밀 값은 저장소와 문서에 기록하지 않는다. `NEXT_PUBLIC_CRM_API_BASE_URL`은 브라우저 번들에 포함되므로 API 주소 변경 뒤에는 Web을 다시 배포한다.
 
-GitHub 저장소에 `staging`, `production` Environment를 만든다. `production`에는 Required reviewer를 지정해 `main` 배포가 사람 승인 뒤에만 시작되게 한다.
+## 4. 임시 운영 제한과 정식 전환 게이트
 
-각 Environment에 다음 값을 설정한다.
+사용자 승인에 따라 2026-08-19 무인증 임시 운영 배포를 실행했다. 운영 DB는 0건이며 실제 고객 데이터 입력은 금지한다. 다음 항목이 모두 완료된 뒤 정식 운영으로 전환한다.
 
-### Secret
+1. Google Workspace 실제 로그인, 허용 도메인, 관리자·열람자 권한을 구현하고 스테이징에서 검수한다.
+2. 미인증 사용자가 영업·재무·관리 URL과 API를 읽거나 쓸 수 없음을 검수한다.
+3. Emergent 서명 검증과 원본 ID 중복 방지를 검수한다.
+4. production PostgreSQL의 예약 백업을 활성화하고 최초 백업 성공을 확인한다.
+5. 신규 상담 등록 → 첫 연락 완료 → 상태 갱신을 staging에서 다시 검수한다.
+6. 사용자가 정식 운영 전환을 명시적으로 승인한다.
 
-- `RAILWAY_TOKEN`: 해당 Railway Environment에 범위가 제한된 Project Token
+현재 1~3번은 구현 전이다. URL을 알고 있는 누구나 접근할 수 있으므로 검수 용도로만 사용한다.
 
-### Variables
+## 5. GitHub Actions 없는 검증·배포 절차
 
-- 저장소 공통 변수 `RAILWAY_DEPLOY_ENABLED`: Railway 연결 전에는 비워두고, 스테이징 준비가 끝나면 `true`
-- `RAILWAY_ENVIRONMENT`: `staging` 또는 `production`
-- `RAILWAY_API_SERVICE`: `tnc-crm-api`
-- `RAILWAY_WEB_SERVICE`: `tnc-crm-web`
-- `API_PUBLIC_URL`: 끝 `/`가 없는 API 공개 주소
-- `WEB_PUBLIC_URL`: 끝 `/`가 없는 Web 공개 주소
+### 5.1 릴리스 후보 고정
 
-## 4. 배포 흐름
+```powershell
+git switch main
+git pull --ff-only
+git status --short
+git log -1 --oneline
+```
 
-- Pull Request: PostgreSQL 16 임시 DB에 마이그레이션하고 lint, typecheck, 단위 테스트, 프로덕션 빌드, 실제 API 연결 Playwright 검사를 수행한다.
-- `develop`: 검사가 모두 통과하면 `staging`에 API → 상태 점검 → Web → 상태 점검 순으로 자동 배포한다.
-- `main`: 검사가 모두 통과하고 GitHub `production` 승인자가 승인하면 같은 순서로 운영 배포한다.
-- API 마이그레이션이나 Railway 상태 점검이 실패하면 이후 Web 배포를 실행하지 않는다.
+`git status --short` 출력이 없어야 한다. 검증 중인 커밋 해시를 배포 기록에 남긴다.
 
-## 5. 장애와 되돌리기
+### 5.2 로컬 검증
 
-1. GitHub Actions의 `api.log`, Playwright trace, 화면 캡처를 먼저 확인한다.
-2. 애플리케이션 배포 실패는 Railway의 직전 성공 Deployment로 Rollback한다.
-3. DB 마이그레이션은 자동 역실행하지 않는다. 호환 가능한 추가형 변경을 기본으로 하고 데이터 복구가 필요한 변경은 백업 확인 후 별도 복구 절차로 실행한다.
-4. 운영 배포 전 스테이징에서 신규 상담 등록 → 첫 연락 완료 → 상태 갱신을 검수한다.
+```powershell
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
 
-## 6. 아직 필요한 외부 준비
+모두 성공해야 한다. 운영 배포 직전에는 같은 커밋을 staging에 배포하고 실제 API 연결 E2E 및 사용자 검수를 먼저 통과시킨다.
 
-- Railway 프로젝트·Environment·PostgreSQL·서비스 생성
-- Railway 도메인 확정
-- GitHub Environment, 승인자, Secret·Variables 등록
-- GitHub 저장소의 `develop`, `main` 보호 규칙 설정
+### 5.3 운영 배포
 
-이 네 항목은 계정 소유자의 외부 권한이 필요한 1회성 작업이다. 코드와 파이프라인은 값이 등록되는 즉시 실행되도록 구성돼 있다.
+Railway CLI 로그인과 프로젝트 연결을 확인한 후 반드시 서비스와 환경을 명시한다.
+
+```powershell
+railway up --service tnc-crm-api-production --environment production --ci --message "production <commit-hash> api"
+Invoke-RestMethod https://tnc-crm-api-production-production.up.railway.app/api/v1/health
+railway up --service tnc-crm-web-production --environment production --ci --message "production <commit-hash> web"
+Invoke-WebRequest https://tnc-crm-web-production-production.up.railway.app/ -UseBasicParsing
+```
+
+API 상태 응답에서 PostgreSQL `ready: true`를 확인한 뒤에만 Web을 배포한다. Web HTTP 200 확인 후 핵심 영업 흐름을 운영 테스트 계정과 테스트 데이터로 점검하고 즉시 제거하거나 보관 처리한다.
+
+## 6. 백업과 복구
+
+PostgreSQL은 production 전용 볼륨을 사용하고 외부 공개 URL을 발급하지 않았다. Railway CLI에는 예약 백업을 설정하는 명령이 없으므로 다음 1회성 작업은 Railway 대시보드에서 수행한다.
+
+1. `tnc-crm` → `production` → `Postgres-7I-m` → `Backups`를 연다.
+2. 일일 예약 백업을 켜고 최소 하루치 복구 지점을 확보한다.
+3. 요금제에서 허용하면 주간·월간 보관도 함께 설정한다.
+4. 최초 성공 시각을 운영 기록에 남긴다.
+5. 분기마다 별도 복원 환경에서 복원 시험을 실행한다.
+
+목표는 최대 중단 반나절, 최대 데이터 손실 하루다. 스키마 변경은 가능한 한 이전 버전과 호환되는 추가형으로 만들고, 마이그레이션을 자동 역실행하지 않는다.
+
+## 7. 장애와 되돌리기
+
+1. Railway의 API 빌드·pre-deploy·runtime 로그를 먼저 확인한다.
+2. API 마이그레이션 또는 상태 점검이 실패하면 Web을 배포하지 않는다.
+3. 애플리케이션 장애는 Railway에서 직전 성공 Deployment로 Rollback한다.
+4. 데이터 복구는 정상 백업과 복원 대상 시점을 확인한 뒤 별도 환경에서 먼저 검증한다.
+5. 배포 커밋, 실행자, 시각, 검증 결과, 되돌림 여부를 계속 보관한다.
+
+## 8. staging 상태
+
+- Web: `https://tnc-crm-web-staging.up.railway.app`
+- API: `https://tnc-crm-api-staging.up.railway.app`
+- PostgreSQL 연결 상태 점검과 Web → API CORS 검수 완료
+- 실제 UUID의 연락 기록 화면 500 오류 수정 및 사용자 재검수 완료
+- Railway 서비스의 GitHub 직접 소스 연결 해제
+
+## 9. GitHub의 역할
+
+GitHub는 코드 이력과 `develop`·`main` 릴리스 기준점으로 계속 사용한다. Billing 제한으로 `.github/workflows/ci.yml`은 수동 참조용으로만 남기며 자동 트리거하지 않는다. 추후 GitHub Actions가 다시 가능해지더라도 Railway 직접 소스 연결과 Actions 배포를 동시에 켜지 않는다.

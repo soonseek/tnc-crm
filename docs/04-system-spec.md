@@ -16,9 +16,11 @@ Emergent는 상담 접수와 텔레그램 알림을 독립적으로 처리한다
 
 ## CI/CD
 
-- Pull Request: lint, typecheck, test, build, 검토 환경
-- `develop`: 스테이징 자동 배포
-- `main`: 사용자 승인 후 운영 배포
+- GitHub는 코드 이력과 `develop`·`main` 릴리스 기준점으로 사용
+- GitHub Actions는 계정 Billing 제한으로 자동 실행하지 않음
+- 로컬에서 lint, typecheck, test, build를 통과한 깨끗한 커밋만 Railway CLI로 배포
+- `develop`: 검증 후 스테이징 수동 배포
+- `main`: 인증·백업 게이트 및 사용자 승인 후 운영 수동 배포
 - DB 변경은 배포 전 실행하고 실패 시 배포 중단
 - 배포 후 상태 점검 실패 시 이전 버전 유지
 
@@ -62,7 +64,7 @@ Emergent는 상담 접수와 텔레그램 알림을 독립적으로 처리한다
 - Drive: 링크만 저장하고 권한은 Drive에서 관리
 - 공휴일: 한국천문연구원 특일 정보 API
 - AI: 서비스 계정 API와 HMAC Webhook
-- GitHub Actions: Railway Project Token
+- 배포 인증: 운영 담당자의 Railway CLI 로그인
 - 장애 알림: 관리자 설정의 보조 이메일·범용 Webhook
 - 텔레그램: 기존 Emergent 기능 유지
 
@@ -77,4 +79,3 @@ Emergent는 상담 접수와 텔레그램 알림을 독립적으로 처리한다
 - Google 인증 자동 갱신 및 실패 시 재로그인
 - Gmail 장애는 별도 채널로 통보
 - 영업·계약·계산서·감사 기록은 계속 보관
-

@@ -29,6 +29,14 @@ test("home frame exposes the priority workflow", async ({ page }) => {
   });
 });
 
+test("local header add button uses the dark gray environment color", async ({ page }) => {
+  await page.goto("/");
+
+  const addButton = page.getByRole("link", { name: "영업 건 추가" });
+  await expect(addButton).toHaveAttribute("data-deployment-environment", "local");
+  await expect(addButton).toHaveClass(/\bbg-zinc-800\b/);
+});
+
 test("primary frames are reachable from mobile navigation", async ({ page }) => {
   const routes = [
     ["/pipeline", "영업판"],

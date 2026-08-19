@@ -1,11 +1,7 @@
-name: CRM CI and Railway deploy
+name: CRM CI reference (manual only)
 
 on:
-  pull_request:
-  push:
-    branches:
-      - develop
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -87,6 +83,7 @@ jobs:
 
       - name: Browser and API integration tests
         env:
+          TNC_PLAYWRIGHT_MODE: production
           TNC_PLAYWRIGHT_BASE_URL: http://127.0.0.1:3100
           TNC_API_BASE_URL: http://127.0.0.1:3002/api/v1
           CRM_API_BASE_URL: http://127.0.0.1:3002/api/v1

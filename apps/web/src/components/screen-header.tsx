@@ -2,6 +2,10 @@ import Link from "next/link";
 import { ArrowLeft, Bell, Plus, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  getDeploymentEnvironment,
+  getHeaderAddButtonClassName,
+} from "@/lib/deployment-environment";
 
 type ScreenHeaderProps = {
   title: string;
@@ -18,6 +22,8 @@ export function ScreenHeader({
   showSearch = false,
   showAdd = false,
 }: ScreenHeaderProps) {
+  const deploymentEnvironment = getDeploymentEnvironment();
+
   return (
     <header data-screen-header className="sticky top-0 z-30 border-b bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/85">
       <div className="flex items-center gap-3">
@@ -48,8 +54,13 @@ export function ScreenHeader({
             </Link>
           </Button>
           {showAdd ? (
-            <Button asChild size="icon-sm" aria-label="영업 건 추가">
-              <Link href="/deals/new">
+            <Button
+              asChild
+              size="icon-sm"
+              className={getHeaderAddButtonClassName(deploymentEnvironment)}
+              aria-label="영업 건 추가"
+            >
+              <Link href="/deals/new" data-deployment-environment={deploymentEnvironment}>
                 <Plus />
               </Link>
             </Button>

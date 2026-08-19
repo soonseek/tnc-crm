@@ -91,18 +91,36 @@ MVP 기능 완료 후 다음 게이트를 통과해야 한다.
 - 실제 영업 건의 다음 행동 카드에서 동작 없는 목업 `완료` 버튼을 제거했다.
 - 첫 연락 전에는 `첫 연락 기록` 링크를, 완료 후에는 실제 저장된 다음 행동과 `예정` 상태만 표시한다.
 
+### staging 배포 후 안정화
+
+- 실제 UUID 영업 건의 `연락 기록`·`위임` 등 하위 작업 화면을 항상 동적 렌더링하도록 고정했다.
+- 목업 경로의 정적 생성과 실데이터 API 조회가 섞여 발생하던 Next.js `static-to-dynamic` 500 오류를 제거했다.
+- CI의 Playwright Web 서버를 `next dev`가 아닌 빌드 결과물의 `next start`로 실행하도록 변경했다.
+- 운영 모드에서 영업 건 등록 → 연락 기록 → 첫 연락 완료를 포함한 E2E 14건을 다시 통과했다.
+
 아직 MVP 완료로 표시하지 않는다. Emergent, 인증·권한, 위임·휴가, 알림 Worker·Cron은 후속 구축 대상이다.
 
 ## 3. 배포(CI/CD)
 
-- PR: lint, typecheck, unit, API integration, Web E2E, build
-- `develop`: Railway 스테이징 자동 배포
-- `main`: 승인 후 운영 배포
+- GitHub Actions는 계정 Billing 제한으로 실행할 수 없어 자동 배포 경로에서 제외
+- 로컬: lint, typecheck, unit, API integration, Web E2E, build
+- `develop`: 검증 후 Railway 스테이징 수동 배포
+- `main`: 인증·백업 게이트와 사용자 승인 후 Railway 운영 수동 배포
 - DB 마이그레이션 성공 후 애플리케이션 배포
 - `/api/v1/health` 상태 점검 실패 시 배포 실패 처리
 - Web·API·Worker·Cron을 Railway 독립 서비스로 배포
 
-현재 구현된 Web·API 배포 설정과 GitHub Actions는 `deploy/railway`와 `.github/workflows/ci.yml`에 있다. Worker·Cron은 실행 코드가 생기는 후속 MVP 묶음에서 독립 서비스로 추가한다.
+운영 전용 PostgreSQL·API·Web 자원과 환경 변수·도메인을 준비했다. 사용자 승인에 따라 인증 전 임시 운영 배포를 실행했으며 실제 고객 데이터는 입력하지 않는다. 현재 실행 절차는 `docs/07-deployment-runbook.md`에 기록한다. Worker·Cron은 실행 코드가 생기는 후속 MVP 묶음에서 독립 서비스로 추가한다.
+
+### 2026-08-19 production 인프라 준비 결과
+
+- production 전용 PostgreSQL 18과 50GB 영구 볼륨 준비
+- API·Web 설정 파일, 내부 DB 참조, 운영 도메인 준비
+- API·Web Railway CLI 임시 운영 배포 및 상태 점검 통과
+- lint, typecheck, 단위 테스트 11건, 프로덕션 빌드 77페이지 통과
+- GitHub Actions 자동 트리거 중지 및 Railway CLI 승인형 배포 실행서 반영
+- 운영 DB 0건 확인
+- 예약 백업 활성화와 인증·권한 구현은 정식 운영 전환 게이트로 유지
 
 ## 4. 추가 구축
 
