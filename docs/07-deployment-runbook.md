@@ -8,12 +8,14 @@
 
 1. Railway 프로젝트에 `staging`, `production` Environment를 만든다.
 2. 각 Environment에 PostgreSQL을 하나씩 추가한다.
-3. 같은 GitHub 저장소를 소스로 하는 `tnc-crm-api`, `tnc-crm-web` 서비스를 만든다.
+3. GitHub 소스를 직접 연결하지 않은 빈 `tnc-crm-api`, `tnc-crm-web` 서비스를 만든다.
 4. API 서비스의 Config as Code 경로를 `/deploy/railway/api.json`으로 설정한다.
 5. Web 서비스의 Config as Code 경로를 `/deploy/railway/web.json`으로 설정한다.
 6. 두 서비스에 Public Domain을 발급한다.
 
 두 설정 파일은 Railpack 빌드, 싱가포르 단일 replica, 상태 점검, 재시작, 무중단 교체 시간을 고정한다. API는 새 버전을 시작하기 전에 PostgreSQL 마이그레이션을 실행한다.
+
+Railway의 GitHub 직접 자동 배포는 사용하지 않는다. GitHub Actions가 검증과 배포를 한 흐름으로 관리하며, 두 경로가 동시에 실행되어 중복 배포되는 상황을 막는다.
 
 ## 2. Railway 환경 변수
 
@@ -68,11 +70,26 @@ GitHub 저장소에 `staging`, `production` Environment를 만든다. `productio
 3. DB 마이그레이션은 자동 역실행하지 않는다. 호환 가능한 추가형 변경을 기본으로 하고 데이터 복구가 필요한 변경은 백업 확인 후 별도 복구 절차로 실행한다.
 4. 운영 배포 전 스테이징에서 신규 상담 등록 → 첫 연락 완료 → 상태 갱신을 검수한다.
 
-## 6. 아직 필요한 외부 준비
+## 6. 현재 staging 상태 (2026-08-19)
 
-- Railway 프로젝트·Environment·PostgreSQL·서비스 생성
-- Railway 도메인 확정
-- GitHub Environment, 승인자, Secret·Variables 등록
-- GitHub 저장소의 `develop`, `main` 보호 규칙 설정
+- 공개 저장소: `https://github.com/soonseek/tnc-crm`
+- Web: `https://tnc-crm-web-staging.up.railway.app`
+- API: `https://tnc-crm-api-staging.up.railway.app`
+- API 상태 점검: `/api/v1/health`에서 PostgreSQL `ready: true` 확인
+- Web 상태 점검: `/`에서 HTTP 200과 `트루노스크루 CRM` 문서 제목 확인
+- Web → API CORS: staging Web origin 허용 확인
+- GitHub Environment: `staging`, `production` 생성 완료
+- staging GitHub Variables: Railway 환경·서비스명·공개 URL 등록 완료
+- 저장소 변수 `RAILWAY_DEPLOY_ENABLED`: `false`
+- Railway `production`: 검수 승인 전까지 빈 Environment로 유지
+- Railway 서비스의 GitHub 직접 배포 소스: 중복 배포 방지를 위해 해제
 
-이 네 항목은 계정 소유자의 외부 권한이 필요한 1회성 작업이다. 코드와 파이프라인은 값이 등록되는 즉시 실행되도록 구성돼 있다.
+## 7. 아직 필요한 외부 준비
+
+1. GitHub 계정의 Billing 잠금을 해제한다. 현재 공개 저장소에서도 Actions job이 시작되기 전에 계정 단위로 거절된다.
+2. Railway 프로젝트의 staging 범위 Project Token을 만들고 GitHub `staging` Environment Secret `RAILWAY_TOKEN`으로 직접 등록한다.
+3. 위 두 항목을 확인한 뒤 저장소 변수 `RAILWAY_DEPLOY_ENABLED`를 `true`로 변경하고 `develop` 배포를 재실행한다.
+4. 운영 검수 시 Railway `production` 자원과 변수·Secret을 별도로 만들고 Required reviewer를 지정한다.
+5. GitHub 저장소의 `develop`, `main` 보호 규칙을 확정한다.
+
+배포 코드는 준비되어 있다. 1~2번은 계정 소유자가 결제 및 비밀값 화면에서 처리해야 하는 1회성 작업이며, 토큰 값은 저장소나 문서에 기록하지 않는다.
