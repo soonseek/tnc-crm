@@ -1,0 +1,159 @@
+name: CRM CI and Railway deploy
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crm-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify MVP
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: crm
+          POSTGRES_PASSWORD: crm
+          POSTGRES_DB: tnc_crm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crm -d tnc_crm"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://crm:crm@127.0.0.1:5432/tnc_crm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Apply PostgreSQL migrations
+        run: pnpm --filter @tnc-crm/api db:migrate
+
+      - name: Production build
+        run: pnpm build
+
+      - name: Install Chromium
+        run: pnpm --filter @tnc-crm/web exec playwright install --with-deps chromium
+
+      - name: Start PostgreSQL-backed API
+        shell: bash
+        run: |
+          NODE_ENV=production PORT=3002 pnpm --filter @tnc-crm/api start > api.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3002/api/v1/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat api.log
+          exit 1
+
+      - name: Browser and API integration tests
+        env:
+          TNC_PLAYWRIGHT_BASE_URL: http://127.0.0.1:3100
+          TNC_API_BASE_URL: http://127.0.0.1:3002/api/v1
+          CRM_API_BASE_URL: http://127.0.0.1:3002/api/v1
+          NEXT_PUBLIC_CRM_API_BASE_URL: http://127.0.0.1:3002/api/v1
+        run: pnpm test:e2e --workers=1
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crm-verification-artifacts
+          path: |
+            api.log
+            artifacts/
+            apps/web/playwright-report/
+            apps/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Railway
+    if: github.event_name == 'push' && vars.RAILWAY_DEPLOY_ENABLED == 'true'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    concurrency:
+      group: railway-${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      cancel-in-progress: false
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT }}
+      RAILWAY_API_SERVICE: ${{ vars.RAILWAY_API_SERVICE }}
+      RAILWAY_WEB_SERVICE: ${{ vars.RAILWAY_WEB_SERVICE }}
+      API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
+      WEB_PUBLIC_URL: ${{ vars.WEB_PUBLIC_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Railway CLI
+        run: npm install --global @railway/cli
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          test -n "$RAILWAY_TOKEN"
+          test -n "$RAILWAY_ENVIRONMENT"
+          test -n "$RAILWAY_API_SERVICE"
+          test -n "$RAILWAY_WEB_SERVICE"
+          test -n "$API_PUBLIC_URL"
+          test -n "$WEB_PUBLIC_URL"
+
+      - name: Deploy API after migration
+        run: railway up --service "$RAILWAY_API_SERVICE" --environment "$RAILWAY_ENVIRONMENT"
+
+      - name: Verify API health
+        run: curl --fail --retry 12 --retry-delay 10 --retry-all-errors "$API_PUBLIC_URL/api/v1/health"
+
+      - name: Deploy Web
+        run: railway up --service "$RAILWAY_WEB_SERVICE" --environment "$RAILWAY_ENVIRONMENT"
+
+      - name: Verify Web health
+        run: curl --fail --retry 12 --retry-delay 10 --retry-all-errors "$WEB_PUBLIC_URL/"

@@ -1,0 +1,199 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+}
+
+.theme-professional-cobalt {
+  --radius: 0.625rem;
+  --background: #f4f5f6;
+  --foreground: #111318;
+  --card: #ffffff;
+  --card-foreground: #111318;
+  --popover: #ffffff;
+  --popover-foreground: #111318;
+  --primary: #0047ff;
+  --primary-foreground: #ffffff;
+  --secondary: #e8eeff;
+  --secondary-foreground: #0037c7;
+  --muted: #eceff3;
+  --muted-foreground: #626a78;
+  --accent: #e8eeff;
+  --accent-foreground: #0037c7;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #dce1e8;
+  --input: #d5dbe4;
+  --ring: #0047ff;
+  --chart-1: #0047ff;
+  --chart-2: #4b72ff;
+  --chart-3: #91a8ff;
+  --chart-4: #1d2533;
+  --chart-5: #798292;
+  --glass-surface: rgb(255 255 255 / 0.82);
+  --glass-surface-strong: rgb(255 255 255 / 0.88);
+  --glass-surface-data: rgb(255 255 255 / 0.95);
+  --glass-border: rgb(255 255 255 / 0.76);
+  --glass-outline: rgb(190 202 224 / 0.56);
+  --glass-shadow: 0 12px 32px rgb(31 55 99 / 0.1);
+  --glass-shadow-soft: 0 8px 24px rgb(31 55 99 / 0.07);
+  --glass-blur: 18px;
+  --glass-blur-strong: 24px;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif;
+}
+
+.theme-restrained-glass .app-viewport {
+  background-color: #f4f5f6;
+  background-image:
+    radial-gradient(circle at 92% 8%, rgb(0 71 255 / 0.12), transparent 28rem),
+    radial-gradient(circle at -18% 48%, rgb(79 175 255 / 0.09), transparent 24rem);
+  background-attachment: fixed;
+}
+
+.theme-restrained-glass [data-screen-header],
+.theme-restrained-glass [data-shell-navigation] {
+  background: var(--glass-surface-strong);
+  border-color: var(--glass-outline);
+  box-shadow: 0 8px 24px rgb(31 55 99 / 0.05);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.12);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.12);
+}
+
+.theme-restrained-glass .glass-surface,
+.theme-restrained-glass .glass-segment {
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.12);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.12);
+}
+
+.theme-restrained-glass .glass-surface-strong {
+  background: var(--glass-surface-strong);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.12);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.12);
+}
+
+.theme-restrained-glass .glass-surface-data {
+  background: var(--glass-surface-data);
+  border-color: rgb(219 226 238 / 0.86);
+  box-shadow: var(--glass-shadow-soft);
+  -webkit-backdrop-filter: blur(6px) saturate(1.05);
+  backdrop-filter: blur(6px) saturate(1.05);
+}
+
+.theme-restrained-glass .glass-segment [data-active="true"] {
+  background: rgb(255 255 255 / 0.9);
+  border-color: rgb(255 255 255 / 0.86);
+  box-shadow: 0 4px 14px rgb(31 55 99 / 0.09);
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .theme-restrained-glass [data-screen-header],
+  .theme-restrained-glass [data-shell-navigation],
+  .theme-restrained-glass .glass-surface,
+  .theme-restrained-glass .glass-segment {
+    background: rgb(255 255 255 / 0.97);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .theme-restrained-glass [data-screen-header],
+  .theme-restrained-glass [data-shell-navigation],
+  .theme-restrained-glass .glass-surface,
+  .theme-restrained-glass .glass-segment {
+    background: rgb(255 255 255 / 0.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .frame-grid {
+    background-image:
+      linear-gradient(to right, color-mix(in oklch, var(--border) 50%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--border) 50%, transparent) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}

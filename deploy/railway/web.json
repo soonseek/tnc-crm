@@ -1,0 +1,28 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK",
+    "buildCommand": "pnpm --filter @tnc-crm/contracts build && pnpm --filter @tnc-crm/web build",
+    "watchPatterns": [
+      "apps/web/**",
+      "packages/contracts/**",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "tsconfig.base.json"
+    ]
+  },
+  "deploy": {
+    "startCommand": "pnpm --filter @tnc-crm/web start",
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ALWAYS",
+    "multiRegionConfig": {
+      "asia-southeast1-eqsg3a": {
+        "numReplicas": 1
+      }
+    },
+    "overlapSeconds": "20",
+    "drainingSeconds": "10"
+  }
+}

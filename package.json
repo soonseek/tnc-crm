@@ -1,0 +1,20 @@
+{
+  "name": "tnc-crm",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "dev": "pnpm --filter @tnc-crm/web dev",
+    "dev:api": "pnpm --filter @tnc-crm/contracts build && pnpm --filter @tnc-crm/api dev",
+    "contracts:build": "pnpm --filter @tnc-crm/contracts build",
+    "build": "pnpm -r --if-present build",
+    "prelint": "pnpm contracts:build",
+    "lint": "pnpm -r --if-present lint",
+    "pretypecheck": "pnpm contracts:build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "pretest": "pnpm contracts:build",
+    "test": "pnpm -r --if-present test",
+    "pretest:e2e": "pnpm contracts:build",
+    "test:e2e": "pnpm --filter @tnc-crm/web test:e2e"
+  }
+}
