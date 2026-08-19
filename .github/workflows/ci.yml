@@ -1,11 +1,7 @@
-name: CRM CI and Railway deploy
+name: CRM CI reference (manual only)
 
 on:
-  pull_request:
-  push:
-    branches:
-      - develop
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
