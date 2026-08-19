@@ -6,6 +6,7 @@
     "watchPatterns": [
       "apps/api/**",
       "packages/contracts/**",
+      "deploy/railway/api.json",
       "package.json",
       "pnpm-lock.yaml",
       "pnpm-workspace.yaml",
