@@ -4,7 +4,7 @@ AX 교육·코칭·구축·변화관리 서비스를 위한 모바일 우선 영
 
 현재 단계는 **6차 구축 및 검수 — MVP 범위 구축**입니다. 확정된 모바일 UI 위에 NestJS API, PostgreSQL, Worker와 Cron을 순차적으로 연결합니다. 첫 MVP 수직 흐름은 신규 문의 접수부터 첫 연락 완료와 다음 행동 추적까지입니다.
 
-1차 수직 흐름은 실제 Web/API로 연결됐고 검수를 통과했습니다. Railway 운영 인프라와 GitHub Actions 없이 승인형으로 배포하는 방법은 [`docs/07-deployment-runbook.md`](docs/07-deployment-runbook.md)에 정리돼 있습니다.
+1차 수직 흐름은 실제 Web/API로 연결됐고 검수를 통과했습니다. Railway 운영 인프라와 GitHub `main` 직접 배포 방법은 [`docs/07-deployment-runbook.md`](docs/07-deployment-runbook.md)에 정리돼 있습니다.
 
 2026-08-19 기준 production에는 무인증 임시 검수 버전이 배포되어 있습니다. Google Workspace 인증과 권한을 구현하기 전까지 실제 고객 데이터는 입력하지 않습니다.
 

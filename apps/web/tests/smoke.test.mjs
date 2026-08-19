@@ -36,5 +36,12 @@ test("header add button has distinct local, staging, and production colors", asy
   assert.match(environment, /staging:\s*"bg-amber-400/);
   assert.match(environment, /production:\s*undefined/);
   assert.match(environment, /return "local"/);
+  assert.match(environment, /local:\s*"LOCAL"/);
+  assert.match(environment, /staging:\s*"STAGING"/);
+  assert.match(environment, /production:\s*"PRODUCTION"/);
+  assert.match(environment, /local:\s*"border-transparent bg-zinc-800/);
+  assert.match(environment, /staging:\s*"border-transparent bg-amber-400/);
+  assert.match(environment, /production:\s*"border-transparent bg-primary/);
   assert.match(header, /data-deployment-environment=/);
+  assert.match(header, /data-environment-label/);
 });

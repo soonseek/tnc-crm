@@ -105,7 +105,7 @@ MVP 기능 완료 후 다음 게이트를 통과해야 한다.
 - GitHub Actions는 계정 Billing 제한으로 실행할 수 없어 자동 배포 경로에서 제외
 - 로컬: lint, typecheck, unit, API integration, Web E2E, build
 - `develop`: 검증 후 Railway 스테이징 수동 배포
-- `main`: 인증·백업 게이트와 사용자 승인 후 Railway 운영 수동 배포
+- `main`: PR 확인 병합 후 Railway GitHub 소스로 운영 자동 배포
 - DB 마이그레이션 성공 후 애플리케이션 배포
 - `/api/v1/health` 상태 점검 실패 시 배포 실패 처리
 - Web·API·Worker·Cron을 Railway 독립 서비스로 배포
@@ -121,6 +121,7 @@ MVP 기능 완료 후 다음 게이트를 통과해야 한다.
 - GitHub Actions 자동 트리거 중지 및 Railway CLI 승인형 배포 실행서 반영
 - 운영 DB 0건 확인
 - 예약 백업 활성화와 인증·권한 구현은 정식 운영 전환 게이트로 유지
+- production API·Web을 `soonseek/tnc-crm`의 `main`에 직접 연결하고 병합 커밋 기준 배포 성공
 
 ## 4. 추가 구축
 
