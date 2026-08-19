@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.TNC_PLAYWRIGHT_BASE_URL ?? "http://localhost:3100";
+const productionMode = process.env.TNC_PLAYWRIGHT_MODE === "production";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -14,9 +15,11 @@ export default defineConfig({
     ...devices["Pixel 7"],
   },
   webServer: {
-    command: "pnpm exec next dev -p 3100",
+    command: productionMode
+      ? "pnpm exec next start -p 3100"
+      : "pnpm exec next dev -p 3100",
     url: baseURL,
-    reuseExistingServer: true,
+    reuseExistingServer: !productionMode,
     timeout: 120_000,
   },
 });

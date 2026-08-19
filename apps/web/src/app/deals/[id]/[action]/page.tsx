@@ -14,6 +14,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { getDeal } from "@/lib/crm-api";
 import { deals } from "@/lib/mock-data";
 
+// UUID 기반 실데이터 경로는 요청마다 CRM API를 조회하므로 정적 생성하면 안 된다.
+export const dynamic = "force-dynamic";
+
 const actions = {
   edit: { title: "영업 정보 수정", description: "고객·문의 정보 최신화" },
   activity: { title: "활동 기록", description: "전화·문자·미팅 결과" },

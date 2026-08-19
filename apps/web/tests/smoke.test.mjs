@@ -14,3 +14,10 @@ test("shadcn configuration uses the neutral base", async () => {
   assert.equal(config.style, "new-york");
 });
 
+test("live deal action pages are always rendered dynamically", async () => {
+  const page = await readFile(
+    new URL("../src/app/deals/[id]/[action]/page.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /export const dynamic = ["']force-dynamic["']/);
+});
